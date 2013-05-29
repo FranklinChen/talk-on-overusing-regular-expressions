@@ -1,0 +1,21 @@
+\begin{frame}
+  \frametitle{Combinator library vs. generator}
+
+  We have seen the elegance of parser combinator libraries. What about the other approach?
+
+  \begin{itemize}
+    \item<1-> Combinator library: internal DSL
+      \begin{itemize}
+        \item Just code: easiest for getting started
+        \item Easier to debug
+        \item May be slow: interpreted
+      \end{itemize}
+    \item<2-> Parser generator: external DSL
+      \begin{itemize}
+        \item Requires running a separate program to generate source (compile)
+        \item \texttt{yacc}: \texttt{grammar.y} to \texttt{grammar.c}
+        \item \href{http://i.loveruby.net/en/projects/racc/}{\texttt{Racc}}: \texttt{grammar.y} to \texttt{grammar.rb}
+        \item \href{http://www.antlr.org/}{\texttt{ANTLR}}: \texttt{grammar.g} to \texttt{grammar.java} (I used for a project years ago)
+      \end{itemize}
+  \end{itemize}
+\end{frame}

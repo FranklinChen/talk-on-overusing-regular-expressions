@@ -1,0 +1,14 @@
+\begin{frame}[fragile]
+  \frametitle{Parser tests: Ruby}
+
+  \href{http://rspec.info/}{RSpec} test excerpts:
+
+  \begin{minted}{ruby}
+expect(parser.email).to parse('prez@whitehouse.gov')
+
+expect { parser.email.parse('prez@whitehouse.') }.
+  to raise_error(Parslet::ParseFailed) { |error|
+    expect(error.cause.ascii_tree).to \
+    match(/Expected at least 1 of DOMAIN_CHAR at line 1 char 17/)
+  \end{minted}
+\end{frame}

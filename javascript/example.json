@@ -1,0 +1,8 @@
+{
+    "distance" : 5.6,
+    "address" : {
+        "street" : "0 Nowhere Road",
+        "neighbors" : ["X", "Y"],
+        "garage" : null
+    }
+}

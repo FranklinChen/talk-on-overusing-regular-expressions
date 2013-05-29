@@ -1,0 +1,22 @@
+\begin{frame}[fragile]
+  \frametitle{Don't Do It Yourself: use libraries}
+
+  Use the Perl library we installed:
+
+  \begin{minted}{perl}
+use Mail::RFC822::Address qw(valid);
+
+if (valid $address) {
+  print "Successfully regex-matched $address\n";
+}
+else {
+  print "Regex match failed, but we have no idea where!\n";
+}
+  \end{minted}
+
+  \begin{minted}{console}
+$ perl validate_email.pl 'FranklinChen+spam@cmu.edu'         
+Successfully regex-matched FranklinChen+spam@cmu.edu
+  \end{minted}
+
+\end{frame}

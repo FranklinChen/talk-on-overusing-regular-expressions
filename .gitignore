@@ -1,0 +1,14 @@
+target
+.idea*
+.classpath
+.project
+*.sublime-project
+.ensime*
+*.aux
+*.log
+*.nav
+*.out
+*.snm
+*.toc
+*.vrb
+*.pyg

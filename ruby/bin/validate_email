@@ -1,0 +1,24 @@
+#!/usr/bin/env ruby
+
+require 'email_validator'
+
+if ARGV.length != 1
+  STDERR.puts "Usage: validate_email address"
+end
+
+address = ARGV[0]
+
+if address =~ /\A[a-zA-Z]+@([^@\.]+\.)+[^@\.]+\z/
+  puts "Successfully regex-matched #{address}"
+else
+  puts "Regex match failed, but we have no idea where!"
+end
+
+parser = EmailValidator::Parser.new
+begin
+  parser.email.parse(address)
+  puts "Successfully parsed #{address}"
+rescue Parslet::ParseFailed => error
+  puts "Parse failed, and here's why:"
+  puts error.cause.ascii_tree
+end
