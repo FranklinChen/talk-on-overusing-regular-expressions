@@ -446,7 +446,20 @@ my $addr_spec = "$localpart\@$lwsp*$domain";
 
 \input{frames/recursive-regexes.tex}
 
-% (To save time: no more Ruby code in this presentation.)
+\begin{frame}
+  \frametitle{Toy JSON parser: Ruby}
+
+  To save time:
+  \begin{itemize}
+    \item No more Ruby code in this presentation
+    \item Continuing with Scala since most concise
+    \item Remember: concepts are language-independent!
+  \end{itemize}
+
+  Full code for a toy JSON parser is available in the Parslet web site at \url{https://github.com/kschiess/parslet/blob/master/example/json.rb}
+\end{frame}
+
+
 \begin{frame}[fragile]
   \frametitle{Toy JSON parser: Scala}
 
@@ -609,6 +622,7 @@ tokens = {
         \item Hierarchical, nested data
       \end{itemize}
     \item Avoid reinventing
+    \item Concepts are language-independent: find and use a parser library for your language
   \end{itemize}
 
   All materials for this talk available at \url{https://github.com/franklinchen/talk-on-overusing-regular-expressions}. The hyperlinks on the slide PDFs are clickable.
