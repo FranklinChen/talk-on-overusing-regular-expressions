@@ -21,140 +21,214 @@ June 1, 2013
 %\end{frame}
 
 \begin{frame}
-  \frametitle{Introduction}
+  \frametitle{Famous quote}
 
-  \href{http://groups.google.com/forum/?hl=en&fromgroups\#!msg/alt.religion.emacs/DR057Srw5-c/Co-2L2BKn7UJ}{Jamie Zawinski famously wrote}:
+  In 1997, \href{http://groups.google.com/forum/?hl=en&fromgroups\#!msg/alt.religion.emacs/DR057Srw5-c/Co-2L2BKn7UJ}{Jamie Zawinski famously wrote}:
 
   \begin{quotation}
     Some people, when confronted with a problem, think, ``I know, I'll use regular expressions.''
 
     Now they have two problems.
   \end{quotation}
-
-  \begin{itemize}
-    \item<1-> Why the controversy over using regular expressions (regexes)?
-    \item<2-> What are better regex practices?
-    \item<3-> What alternatives?
-  \end{itemize}
-\end{frame}
-
-\begin{frame}[fragile]
-  \frametitle{An infamous regex for email}
-
-  \href{http://www.ex-parrot.com/pdw/Mail-RFC822-Address.html}{A big Perl regex for email address based on RFC 822 grammar}:
-
-  \inputminted{perl}{extra/rfc-822.pl}
 \end{frame}
 
 \begin{frame}
-  \frametitle{Outline}
+  \frametitle{Purpose of this talk}
 
+  Assumption: you already have experience using regexes
+
+  Goals:
   \begin{itemize}
-    \item Regular expressions
-    \item Parsing more powerful grammars
-    \item Practical considerations
-    \item Concepts \emph{not} language-specific
+    \item Change how you think about and use regexes
+    \item Introduce you to advantages of using parser combinators
+    \item Show a smooth way to transition from regexes to parsers
+    \item Discuss \emph{practical} tradeoffs
+    \item Show only tested, running code: \url{https://github.com/franklinchen/talk-on-overusing-regular-expressions}
+  \end{itemize}
+
+  Non-goals:
+  \begin{itemize}
+    \item Will not discuss computer science theory
+    \item Will not discuss parser generators such as \texttt{yacc} and \href{http://www.antlr.org/}{\texttt{ANTLR}}
   \end{itemize}
 \end{frame}
 
 \begin{frame}
   \frametitle{Example code in which languages?}
 
-  Runnable, tested code projects: \url{https://github.com/franklinchen/talk-on-overusing-regular-expressions}
-
-  Time limitations: take two representatives.
-
+  Considerations:
   \begin{itemize}
-    \item<1-> Dynamic typing: \href{http://www.ruby-lang.org/}{Ruby}
-      \begin{itemize}
-        \item<2-> Perl, Python, JavaScript, Clojure, etc.
-      \end{itemize}
-    \item<3-> Static typing: \href{http://www.scala-lang.org/}{Scala}
-      \begin{itemize}
-        \item<4-> Java, C++, C\#, ML (OCaml, F\#), Haskell, etc.
-      \end{itemize}
+    \item This is a \emph{polyglot} conference
+    \item Time limitations
   \end{itemize}
 
+  Decision: focus primarily on two representative languages.
+  \begin{itemize}
+    \item \href{http://www.ruby-lang.org/}{Ruby}: dynamic typing
+      \begin{itemize}
+        \item Perl, Python, JavaScript, Clojure, etc.
+      \end{itemize}
+    \item \href{http://www.scala-lang.org/}{Scala}: static typing: 
+      \begin{itemize}
+        \item Java, C++, C\#, F\#, ML, Haskell, etc.
+      \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{An infamous regex for email}
+
+  The reason for my talk!
+
+  \href{http://www.ex-parrot.com/pdw/Mail-RFC822-Address.html}{A big Perl regex for email address based on RFC 822 grammar}:
+
+  % Use text instead of perl because of syntax highlighting bug in Pygments
+  \inputminted{text}{extra/rfc-822.pl}
 \end{frame}
 
 \begin{frame}
-  \frametitle{My email address fiasco}
+  \frametitle{Personal story: my email address fiasco}
 
   To track and prevent spam: \texttt{FranklinChen+spam@cmu.edu}
 
   \begin{itemize}
-    \item<1-> Some sites claimed invalid (wrongly)
-    \item<2-> Some sites allowed registration
+    \item Some sites \emph{wrongly} claimed invalid (because of \texttt{+})
+    \item Other sites did allow registration
       \begin{itemize}
-        \item<3-> I caught spam
-        \item<4-> Unsubscribing failed
+        \item I caught spam
+        \item Unsubscribing failed!
           \begin{itemize}
-            \item<5-> Some claimed invalid (wrongly since I registered!)
-            \item<6-> Some silently failed to unsubscribe
-            \item<7-> Had to set up spam filter
+            \item Some wrong claimed invalid (!?!)
+            \item Some silently failed to unsubscribe
+            \item Had to set up spam filter
           \end{itemize}
       \end{itemize}
   \end{itemize}
+\end{frame}
 
+\begin{frame}[fragile]
+  \frametitle{Problem: different regexes for email?}
+
+  Examples: which one is better?
+
+  \begin{minted}{ruby}
+/\A[^@]+@[^@]+\z/
+  \end{minted}
+
+  vs.
+  
+  \begin{minted}{ruby}
+/\A[a-zA-Z]+@([^@\.]+\.)+[^@\.]+\z/
+  \end{minted}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Readability: first example}
+
+  Use \texttt{x} for readability!
+
+  \begin{minted}{ruby}
+/\A        # match string begin
+   [^@]+     # local part: 1+ chars of not @
+   @         # @
+   [^@]+     # domain: 1+ chars of not @
+   \z/x    # match string end
+  \end{minted}
+  % Note Pygments does not highlight internals of Ruby regexes!
+
+  matches
+
+  \begin{minted}{text}
+FranklinChen+spam
+@
+cmu.edu
+  \end{minted}
+
+  Advice: please write regexes in this formatted style!
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Readability: second example}
+
+  \begin{minted}{ruby}
+/\A        # match string begin
+   [a-zA-Z]+ # local part: 1+ of Roman alphabetic
+   @         # @
+   (         # 1+ of this group
+     [^@\.]+   # 1+ of not (@ or dot)
+     \.        # dot
+   )+
+   [^@\.]+   # 1+ of not (@ or dot)
+ \z/x      # match string end
+  \end{minted}
+
+  does \emph{not} match
+
+  \begin{minted}{text}
+FranklinChen+spam
+@
+cmu.edu
+  \end{minted}
 \end{frame}
 
 \begin{frame}[fragile]
   \frametitle{Don't Do It Yourself: find libraries}
 
-  Find a library of regexes!
+  Infamous regex revisited: was automatically generated into the Perl module \href{http://search.cpan.org/~pdwarren/Mail-RFC822-Address-0.3/Address.pm}{\texttt{Mail::RFC822::Address}} based on the RFC 822 spec.
 
-  Example: Perl has \href{http://search.cpan.org/~pdwarren/Mail-RFC822-Address-0.3/Address.pm}{\texttt{Mail::RFC822::Address}}, the infamous regex!
-
+  If you use Perl and need to validate email addresses:
   \begin{minted}{console}
 # Install the library
 $ cpanm Mail::RFC822::Address
   \end{minted}
 
-  Other regexes ready for use: {http://search.cpan.org/dist/Regexp-Common/}{\texttt{Regexp::Common}}
+  Other Perl regexes: \href{http://search.cpan.org/dist/Regexp-Common/}{\texttt{Regexp::Common}}
 \end{frame}
 
 % TODO no time
 %\input{frames/use-perl-library.tex}
 
 \begin{frame}[fragile]
-  \frametitle{Build your own libraries}
+  \frametitle{Regex match success vs. failure}
 
-  Excerpt from \href{http://cpansearch.perl.org/src/PDWARREN/Mail-RFC822-Address-0.3/Address.pm}{source code} of \texttt{Mail::RFC822::Address}
-
+  Parentheses for captured grouping:
   \begin{minted}{perl}
-# ...some excerpts only
-my $atom = "[^$specials $controls]+(?:$lwsp+|\\Z|(?=[\\[\"$specials]))";
-my $word = "(?:$atom|$quoted_string)";
-my $localpart = "$word(?:\\.$lwsp*$word)*";
-my $sub_domain = "(?:$atom|$domain_literal)";
-my $domain = "$sub_domain(?:\\.$lwsp*$sub_domain)*";
-my $addr_spec = "$localpart\@$lwsp*$domain";
-my $phrase = "$word*";
-my $route = "(?:\@$domain(?:,\@$lwsp*$domain)*:$lwsp*)";
-my $route_addr = "\\<$lwsp*$route?$addr_spec\\>$lwsp*";
-my $mailbox = "(?:$addr_spec|$phrase$route_addr)";
-my $group = "$phrase:$lwsp*(?:$mailbox(?:,\\s*$mailbox)*)?;\\s*";
-my $address = "(?:$mailbox|$group)";
+if ($address =~ /\A        # match string begin
+  ([a-zA-Z]+) # $1: local part: 1+ Roman alphabetic
+  @           # @
+  (           # $2: entire domain
+    (?:         # 1+ of this non-capturing group
+      [^@\.]+     # 1+ of not (@ or dot)
+      \.          # dot
+    )+
+    ([^@\.]+) # $3: 1+ of not (@ or dot)
+  )
+   \z/x) {    # match string end
+    print "local part: $1; domain: $2; top level: $3\n";
+}
+else {
+    print "Regex match failed!\n";
+}
   \end{minted}
 \end{frame}
 
-\begin{frame}
+\begin{frame}[fragile]
   \frametitle{Regexes do not report errors usefully}
 
-  \begin{itemize}
-    \item If success: we can extract matching/grouping information
-    \item If failure: get no information about why!
-  \end{itemize}
+  Success:
+  \begin{minted}{console}
+$ perl/extract_parts.pl 'prez@whitehouse.gov'
+local part: prez; domain: whitehouse.gov; top level: gov
+  \end{minted}
 
-%  \texttt{ValidateEmail} code:
-%
+  But failure:
+  \begin{minted}{console}
+$ perl/extract_parts.pl 'FranklinChen+spam@cmu.edu'
+Regex match failed!
+  \end{minted}
+  
+% Stuck to Perl for showing extraction instead.
 %  \inputminted{scala}{extra/regex-match.scala}
-%
-%  Result from running with \texttt{FranklinChen+spam@cmu.edu}:
-%
-%  \begin{minted}{text}
-%Regex match failed, but we have no idea where!
-%  \end{minted}
 
   We have a dilemma:
   \begin{itemize}
@@ -185,10 +259,48 @@ FranklinChen+spam@cmu.edu
   \end{itemize}
 \end{frame}
 
+\begin{frame}
+  \frametitle{Moving from regexes to grammar parsers}
+
+  \begin{itemize}
+    \item Only discuss parser combinators, not generators
+    \item Use the second email regex as a starting point
+    \item Use modularization
+  \end{itemize}
+\end{frame}
+
+% No time
+% Confusing because different regex
+%\input{frames/perl-modularized-regex.tex}
+
 % Parser tests
 
 %\input{frames/parser-tests-scala.tex}
 %\input{frames/parser-tests-ruby.tex}
+
+% Finally switch to Ruby
+
+\begin{frame}[fragile]
+  \frametitle{Modularized regex: Ruby}
+
+  Ruby allows interpolation of regexes into other regexes:
+
+  \begin{minted}{ruby}
+LOCAL_PART = /[a-zA-Z]+/x
+AT = /@/x
+DOMAIN_CHAR = /[^@\.]/x
+SUB_DOMAIN = /#{DOMAIN_CHAR}+/x
+DOT = /\./x
+DOMAIN = /(#{SUB_DOMAIN}#{DOT})+ #{SUB_DOMAIN}/x
+EMAIL = /
+    \A
+    #{LOCAL_PART}
+    #{AT}
+    #{DOMAIN}
+    \z
+  /x
+  \end{minted}
+\end{frame}
 
 \begin{frame}[fragile]
   \frametitle{Modularized regex: Scala}
@@ -211,30 +323,24 @@ val email = raw"""(?x)
 val emailRegex = email.r
   \end{minted}
 
-\end{frame}
-
-\begin{frame}[fragile]
-  \frametitle{Modularized regex: Ruby}
-
-  \begin{minted}{ruby}
-LOCAL_PART = /[a-zA-Z]+/x
-AT = /@/x
-DOMAIN_CHAR = /[^@\.]/x
-SUB_DOMAIN = /#{DOMAIN_CHAR}+/x
-DOT = /\./x
-DOMAIN = /(#{SUB_DOMAIN}#{DOT})+ #{SUB_DOMAIN}/x
-EMAIL = /
-    \A
-    #{LOCAL_PART}
-    #{AT}
-    #{DOMAIN}
-    \z
-  /x
-  \end{minted}
-
+  Scala notes:
+  \begin{itemize}
+    \item Triple quotes are for raw strings (no backslash interpretation)
+    \item \texttt{raw} allows variable interpolation in raw strings
+    \item \texttt{.r} is a method converting \texttt{String} to \href{http://www.scala-lang.org/api/current/index.html#scala.util.matching.Regex}{\texttt{Regex}}
+  \end{itemize}
 \end{frame}
 
 % First parser: email
+% Ruby first, then Scala
+
+\begin{frame}[fragile]
+  \frametitle{Email parser: Ruby}
+
+  Ruby does not have a standard parser combinator library. One that is popular is \href{http://kschiess.github.io/parslet/}{Parslet}.
+
+  \inputminted{ruby}{ruby/lib/email_validator/parser.rb}
+\end{frame}
 
 \begin{frame}[fragile]
   \frametitle{Email parser: Scala}
@@ -246,16 +352,30 @@ EMAIL = /
   Inheriting from \texttt{RegexParsers} allows the implicit conversions from regexes into parsers.
 \end{frame}
 
+% Error reporting
 
 \begin{frame}[fragile]
-  \frametitle{Email parser: Ruby}
+  \frametitle{Error reporting: Ruby}
 
-  Ruby does not have a standard parser combinator library. One that is popular is \href{http://kschiess.github.io/parslet/}{Parslet}.
+  We have achieved the goal of decent error reporting:
 
-  \inputminted{ruby}{ruby/lib/email_validator/parser.rb}
+  \begin{minted}{ruby}
+begin
+  parser.email.parse(address)
+  puts "Successfully parsed #{address}"
+rescue Parslet::ParseFailed => error
+  puts "Parse failed, and here's why:"
+  puts error.cause.ascii_tree
+end
+  \end{minted}
+
+  \begin{minted}{console}
+$ bundle exec bin/validate_email 'FranklinChen+spam@cmu.edu'
+Parse failed, and here's why:
+Failed to match sequence (LOCAL_PART AT DOMAIN) at line 1 char 13.
+`- Expected "@", but got "+" at line 1 char 13.
+  \end{minted}
 \end{frame}
-
-% Error reporting
 
 \begin{frame}[fragile]
   \frametitle{Error reporting: Scala}
@@ -282,40 +402,29 @@ FranklinChen+spam@cmu.edu
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{Error reporting: Ruby}
-
-  We have achieved the goal of decent error reporting:
-
-  \begin{minted}{ruby}
-begin
-  parser.email.parse(address)
-  puts "Successfully parsed #{address}"
-rescue Parslet::ParseFailed => error
-  puts "Parse failed, and here's why:"
-  puts error.cause.ascii_tree
-end
-  \end{minted}
-
-  \begin{minted}{console}
-$ bundle exec bin/validate_email 'FranklinChen+spam@cmu.edu'
-Parse failed, and here's why:
-Failed to match sequence (LOCAL_PART AT DOMAIN) at line 1 char 13.
-`- Expected "@", but got "+" at line 1 char 13.
-  \end{minted}
-\end{frame}
-
-\begin{frame}
   \frametitle{Infamous email regex: revisited}
 
-  The Perl regex in \texttt{Mail::RFC822::Address} was actually \emph{manually} back-converted from a parser generated by the Perl library \href{http://search.cpan.org/~jtbraun/Parse-RecDescent-1.967009/lib/Parse/RecDescent.pm}{\texttt{Parse::RecDescent}}.
+  \begin{itemize}
+    \item \texttt{Mail::RFC822::Address} Perl regex: actually manually back-converted from a parser!
+    \item Original module used Perl parser library \href{http://search.cpan.org/~jtbraun/Parse-RecDescent-1.967009/lib/Parse/RecDescent.pm}{\texttt{Parse::RecDescent}}
+  \end{itemize}
 
-  Reason: speed.
+  \begin{itemize}
+    \item Regex author turned the grammar rules into a modularized regex
+    \item Reason: speed
+  \end{itemize}
 
-  There are always tradeoffs.
+  Perl modularized regex \href{http://cpansearch.perl.org/src/PDWARREN/Mail-RFC822-Address-0.3/Address.pm}{source code excerpt}:
+  \begin{minted}{perl}
+my $localpart = "$word(?:\\.$lwsp*$word)*";
+my $sub_domain = "(?:$atom|$domain_literal)";
+my $domain = "$sub_domain(?:\\.$lwsp*$sub_domain)*";
+my $addr_spec = "$localpart\@$lwsp*$domain";
+  \end{minted}
 \end{frame}
 
 % TODO no time
-\input{frames/generators.tex}
+%\input{frames/generators.tex}
 
 \begin{frame}
   \frametitle{Why validate email address anyway?}
@@ -481,6 +590,12 @@ parsers.value must succeedOn("""{
 
   Depending on the nature of corner cases and nesting, real parser might be preferable.
 \end{frame}
+
+% TODO
+% Pygments example
+% Was true when highlighting as Perl
+% Distracting
+%  By the way: note the bug in \href{http://pygments.org/}{Pygments} syntax highlighter I use for my slides!
 
 \begin{frame}
   \frametitle{Conclusion}

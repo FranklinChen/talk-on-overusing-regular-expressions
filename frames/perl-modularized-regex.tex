@@ -1,0 +1,21 @@
+\begin{frame}[fragile]
+  \frametitle{Modularized regex: Perl}
+
+  Excerpt from \href{http://cpansearch.perl.org/src/PDWARREN/Mail-RFC822-Address-0.3/Address.pm}{source code} of \texttt{Mail::RFC822::Address}
+
+  \begin{minted}{perl}
+# ...some excerpts only
+my $atom = "[^$specials $controls]+(?:$lwsp+|\\Z|(?=[\\[\"$specials]))";
+my $word = "(?:$atom|$quoted_string)";
+my $localpart = "$word(?:\\.$lwsp*$word)*";
+my $sub_domain = "(?:$atom|$domain_literal)";
+my $domain = "$sub_domain(?:\\.$lwsp*$sub_domain)*";
+my $addr_spec = "$localpart\@$lwsp*$domain";
+my $phrase = "$word*";
+my $route = "(?:\@$domain(?:,\@$lwsp*$domain)*:$lwsp*)";
+my $route_addr = "\\<$lwsp*$route?$addr_spec\\>$lwsp*";
+my $mailbox = "(?:$addr_spec|$phrase$route_addr)";
+my $group = "$phrase:$lwsp*(?:$mailbox(?:,\\s*$mailbox)*)?;\\s*";
+my $address = "(?:$mailbox|$group)";
+  \end{minted}
+\end{frame}
