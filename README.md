@@ -2,11 +2,6 @@
 
 This is material for my presentation at [Pittsburgh Tech Fest 2013](http://www.pghtechfest.com/), given on June 1, 2013.
 
-Provided:
-
-- runnable code
-- PDF of slides
-
 ### Abstract of talk
 
 Regular expressions are very commonly used to process and validate
@@ -20,3 +15,15 @@ JavaScript, Scala.)
 I will emphasize ease of use, since one reason for the overuse of
 regular expressions is that they are so easy to pull out of one's
 toolbox.
+
+### Provided materials
+
+- running code, with test suite
+  - Scala
+  - Ruby
+  - JavaScript
+  - Perl
+- PDFs of slides
+  - presentation for viewing
+  - handout for printing
+
