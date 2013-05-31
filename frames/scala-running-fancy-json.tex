@@ -1,0 +1,24 @@
+\begin{frame}[fragile]
+  \frametitle{Running the fancy toy JSON parser}
+
+  \begin{minted}{scala}
+val j = """{
+  "distance" : 5.6,
+  "address" : {
+    "street" : "0 Nowhere Road",
+    "neighbors" : ["X", "Y"],
+    "garage" : null
+  }
+}"""
+
+parseAll(value, j) match {
+  case Success(result, _) =>
+    println(result)
+  case failure: NoSuccess =>
+    println("Parse failed, and here's why:")
+    println(failure)
+}
+  \end{minted}
+
+  Output: what we proposed when data modeling!
+\end{frame}

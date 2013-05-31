@@ -1,6 +1,6 @@
 package com.franklinchen
 
-sealed trait ToyJSON
+sealed abstract class ToyJSON
 
 case class JObject(map: Map[String, ToyJSON]) extends ToyJSON
 

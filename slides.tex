@@ -285,48 +285,32 @@ FranklinChen+spam@cmu.edu
 
   Ruby allows interpolation of regexes into other regexes:
 
-  \begin{minted}{ruby}
-LOCAL_PART = /[a-zA-Z]+/x
-AT = /@/x
-DOMAIN_CHAR = /[^@\.]/x
-SUB_DOMAIN = /#{DOMAIN_CHAR}+/x
-DOT = /\./x
-DOMAIN = /(#{SUB_DOMAIN}#{DOT})+ #{SUB_DOMAIN}/x
-EMAIL = /
-    \A
-    #{LOCAL_PART}
-    #{AT}
-    #{DOMAIN}
-    \z
-  /x
-  \end{minted}
+  \inputminted{ruby}{ruby/lib/email_validator/pretty_regex_matcher.rb}
 \end{frame}
 
 \begin{frame}[fragile]
   \frametitle{Modularized regex: Scala}
 
   \begin{minted}{scala}
-val user = """[a-zA-Z]+"""
-val at = """@"""
-val domainSegment = """[^@\.]+"""
-val dot = """\."""
-val email = raw"""(?x)
-  \A
-  $user
-  $at
-  (
-    $domainSegment $dot
-  )+
-  $domainSegment
-  \z"""
+object PrettyRegexMatcher {
+  val user = """[a-zA-Z]+"""
+  val domainChar = """[^@\.]"""
+  val domainSegment = raw"""(?x) $domainChar+"""
+  val at = """@"""
+  val dot = """\."""
+  val domain = raw"""(?x)
+    ($domainSegment $dot)+ $domainSegment"""
+  val email = raw"""(?x) \A $user $at $domain \z"""
+  val emailRegex = email.r
 
-val emailRegex = email.r
+  def matches(s: String): Boolean =
+    (emailRegex findFirstMatchIn s).nonEmpty
+end
   \end{minted}
 
-  Scala notes:
   \begin{itemize}
     \item Triple quotes are for raw strings (no backslash interpretation)
-    \item \texttt{raw} allows variable interpolation in raw strings
+    \item \texttt{raw} allows raw variable interpolation
     \item \texttt{.r} is a method converting \texttt{String} to \href{http://www.scala-lang.org/api/current/index.html#scala.util.matching.Regex}{\texttt{Regex}}
   \end{itemize}
 \end{frame}
@@ -355,11 +339,10 @@ val emailRegex = email.r
 % Error reporting
 
 \begin{frame}[fragile]
-  \frametitle{Error reporting: Ruby}
-
-  We have achieved the goal of decent error reporting:
+  \frametitle{Running and reporting errors: Ruby}
 
   \begin{minted}{ruby}
+parser = EmailValidator::Parser.new
 begin
   parser.email.parse(address)
   puts "Successfully parsed #{address}"
@@ -370,25 +353,29 @@ end
   \end{minted}
 
   \begin{minted}{console}
-$ bundle exec bin/validate_email 'FranklinChen+spam@cmu.edu'
+$ validate_email 'FranklinChen+spam@cmu.edu'
 Parse failed, and here's why:
-Failed to match sequence (LOCAL_PART AT DOMAIN) at line 1 char 13.
+Failed to match sequence (LOCAL_PART AT DOMAIN) at
+  line 1 char 13.
 `- Expected "@", but got "+" at line 1 char 13.
   \end{minted}
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{Error reporting: Scala}
-
-  We have achieved the goal of decent error reporting:
+  \frametitle{Running and reporting errors: Scala}
 
   \begin{minted}{scala}
-parseAll(email, address) match {
-  case Success(_, _) =>
-    println(s"Successfully parsed $address")
-  case failure: NoSuccess =>
-    println("Parse failed, and here's why:")
-    println(failure)
+def runParser(address: String) {
+  import EmailParsers._
+
+  // parseAll is method inherited from RegexParsers
+  parseAll(email, address) match {
+    case Success(_, _) =>
+      println(s"Successfully parsed $address")
+    case failure: NoSuccess =>
+      println("Parse failed, and here's why:")
+      println(failure)
+  }
 }
   \end{minted}
 
@@ -402,24 +389,23 @@ FranklinChen+spam@cmu.edu
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{Infamous email regex: revisited}
+  \frametitle{Infamous email regex revisited: conversion!}
 
   \begin{itemize}
     \item \texttt{Mail::RFC822::Address} Perl regex: actually manually back-converted from a parser!
     \item Original module used Perl parser library \href{http://search.cpan.org/~jtbraun/Parse-RecDescent-1.967009/lib/Parse/RecDescent.pm}{\texttt{Parse::RecDescent}}
-  \end{itemize}
-
-  \begin{itemize}
     \item Regex author turned the grammar rules into a modularized regex
     \item Reason: speed
   \end{itemize}
 
   Perl modularized regex \href{http://cpansearch.perl.org/src/PDWARREN/Mail-RFC822-Address-0.3/Address.pm}{source code excerpt}:
   \begin{minted}{perl}
+# ...
 my $localpart = "$word(?:\\.$lwsp*$word)*";
 my $sub_domain = "(?:$atom|$domain_literal)";
 my $domain = "$sub_domain(?:\\.$lwsp*$sub_domain)*";
 my $addr_spec = "$localpart\@$lwsp*$domain";
+# ...
   \end{minted}
 \end{frame}
 
@@ -429,11 +415,11 @@ my $addr_spec = "$localpart\@$lwsp*$domain";
 \begin{frame}
   \frametitle{Why validate email address anyway?}
 
-  Look at the bigger picture.
-
-  This guy advocates \href{http://davidcel.is/blog/2012/09/06/stop-validating-email-addresses-with-regex/}{simply sending a user an activation email}.
-
-  Engineering tradeoff: the email sending and receiving programs need to handle the email address anyway.
+  \begin{itemize}
+    \item Software development: always look at the bigger picture 
+    \item \href{http://davidcel.is/blog/2012/09/06/stop-validating-email-addresses-with-regex/}{This guy advocates simply sending a user an activation email}
+    \item Engineering tradeoff: the email sending and receiving programs need to handle the email address anyway
+  \end{itemize}
 \end{frame}
 
 \begin{frame}
@@ -441,8 +427,8 @@ my $addr_spec = "$localpart\@$lwsp*$domain";
 
   \begin{itemize}
     \item It is possible to write a regex
-    \item But you may want to use someone else's regex
-    \item If you write a regex, modularize it
+    \item But first try to use someone else's tested regex
+    \item If you do write your own regex, modularize it
     \item For error reporting, use a parser: convert from modularized regex
     \item Do you even need to solve the problem?
   \end{itemize}
@@ -451,56 +437,73 @@ my $addr_spec = "$localpart\@$lwsp*$domain";
 % JSON examples
 
 \begin{frame}[fragile]
-  \frametitle{Example: toy JSON parsing}
+  \frametitle{More complex parsing: toy JSON}
 
   \inputminted{json}{javascript/example.json}
 
-  \begin{itemize}
-    \item Would you use a regex to parse?
-    \item Could you use a regex to parse?
-  \end{itemize}
+  Trick question: could you use a regex to parse this?
 \end{frame}
 
-% TODO no time
-%\input{frames/recursive-regexes.tex}
+\input{frames/recursive-regexes.tex}
 
+% (To save time: no more Ruby code in this presentation.)
 \begin{frame}[fragile]
   \frametitle{Toy JSON parser: Scala}
 
-  (To save time: no more Ruby code in this presentation.)
-
   \begin{minted}{scala}
 object ToyJSONParsers extends JavaTokenParsers {
-  def value: Parser[Any] = obj |
-    arr |
-    stringLiteral |
-    floatingPointNumber |
-    "null" |
-    "true" | "false"
+  def value: Parser[Any] = obj | arr |
+    stringLiteral | floatingPointNumber |
+    "null" | "true" | "false"
   def obj = "{" ~ repsep(member, ",") ~ "}"
   def arr = "[" ~ repsep(value, ",") ~ "]"
   def member = stringLiteral ~ ":" ~ value
 }
   \end{minted}
 
-  Inheriting from \texttt{JavaTokenParsers} allows the reuse of \texttt{stringLiteral} and \texttt{floatingPointNumber} parsers.
+  \begin{itemize}
+    \item Inherit from \texttt{JavaTokenParsers}: reuse \texttt{stringLiteral} and \texttt{floatingPointNumber} parsers
+    \item \texttt{\~} is overloaded operator to mean \emph{sequencing} of parsers
+    \item \texttt{value} parser returns \texttt{Any} (equivalent to Java \texttt{Object}) because we have not yet refined the parser with our own domain model
+  \end{itemize}
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{Fancier toy JSON parser: use the data}
+  \frametitle{Fancier toy JSON parser: domain modeling}
 
-  Want to actually shape and use the data parsed.
+  Want to actually query the data upon parsing, to use.
 
   \inputminted{json}{javascript/example.json}
   
-  Example: traverse the JSON to \texttt{address} and then to the second neighbor, \texttt{Y}.
+  \begin{itemize}
+    \item We may want to traverse the JSON to \texttt{address} and then to the second neighbor, to check whether it is \texttt{"Y"}
+    \item Pseudocode after storing in domain model: \texttt{data.address.neighbors[1] == "Y"}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Domain modeling as objects}
+
+  \inputminted{json}{javascript/example.json}
+
+  A natural domain model:
+  \begin{minted}{console}
+JObject(
+  Map(distance -> JFloat(5.6),
+      address -> JObject(
+        Map(street -> JString(0 Nowhere Road),
+            neighbors ->
+              JArray(List(JString(X), JString(Y))),
+            garage -> JNull))))
+  \end{minted}
 \end{frame}
 
 \begin{frame}[fragile]
   \frametitle{Domain modeling: Scala}
 
   \begin{minted}{scala}
-sealed trait ToyJSON
+// sealed means: can't extend outside the source file
+sealed abstract class ToyJSON
 
 case class JObject(map: Map[String, ToyJSON]) extends
   ToyJSON
@@ -517,7 +520,7 @@ case class JBoolean(boolean: Boolean) extends ToyJSON
 
   \begin{minted}{scala}
 def value: Parser[ToyJSON] = obj | arr |
-  stringLiteralStripped ^^ { JString(_) } |
+  stringLiteralStripped ^^ { s => JString(s) } |
   floatingPointNumber ^^ { s => JFloat(s.toFloat) } |
   "null" ^^^ JNull | "true" ^^^ JBoolean(true) |
   "false" ^^^ JBoolean(false)
@@ -533,40 +536,22 @@ def member: Parser[(String, ToyJSON)] =
   \end{minted}
 \end{frame}
 
-\begin{frame}[fragile]
-  \frametitle{Using the parsed JSON}
+% Too complicated to explain test framework and casts
+%\input{frames/scala-extract-json.tex}
 
-  A test using \href{http://etorreborre.github.io/specs2/}{Specs2} Scala testing framework:
-
-  \begin{minted}{scala}
-parsers.value must succeedOn("""{
-  "distance" : 5.6,
-  "address" : {
-    "street" : "0 Nowhere Road",
-    "neighbors" : ["X", "Y"],
-    "garage" : null
-  }
-}""").withResult({ result: ToyJSON =>
-  result.asInstanceOf[JObject].
-    map("address").asInstanceOf[JObject].
-    map("neighbors").asInstanceOf[JArray].
-    list(1).asInstanceOf[JString].
-    string
-} ^^ be_==("Y"))
-  \end{minted}
-\end{frame}
+\input{frames/scala-running-fancy-json.tex}
 
 \begin{frame}
   \frametitle{JSON: reminder not to reinvent}
 
   \begin{itemize}
-    \item<1-> Use a standard JSON parsing library!
+    \item Use a standard JSON parsing library!
       \begin{itemize}
-        \item<2-> \href{http://www.scala-lang.org/api/current/index.html\#scala.util.parsing.json.JSON$}{Scala has one.}
-        \item<3-> All languages have a standard JSON parsing library.
-        \item<4-> Shop around: alternate libraries have different tradeoffs.
+        \item \href{http://www.scala-lang.org/api/current/index.html\#scala.util.parsing.json.JSON$}{Scala has one.}
+        \item All languages have a standard JSON parsing library.
+        \item Shop around: alternate libraries have different tradeoffs.
       \end{itemize}
-    \item<5-> Other standard formats: HTML, XML, CSV, etc.
+    \item Other standard formats: HTML, XML, CSV, etc.
   \end{itemize}
 \end{frame}
 
@@ -575,27 +560,39 @@ parsers.value must succeedOn("""{
   \frametitle{JSON wrapup}
 
   \begin{itemize}
-    \item<1-> Just parsing is simple
-    \item<2-> Domain modeling is trickier
-    \item<3-> \emph{Use an existing JSON parsing library already!} 
+    \item Parsing can be simple
+    \item Domain modeling is trickier but still fit on one page
+    \item \emph{Use an existing JSON parsing library already!} 
   \end{itemize}
 \end{frame}
 
+%\input{frames/octopress.tex}
+
 \begin{frame}[fragile]
-  \frametitle{Final example of real regex code}
+  \frametitle{Final regex example}
 
-  Recently in \href{http://octopress.org/}{Octopress} \href{https://github.com/imathis/octopress/blob/3bb4a14212b226d1da3acd546584d7117557a1ae/lib/octopress/liquid\_helpers/conditional.rb}{Ruby code}:
+  \begin{itemize}
+    \item These slides use the Python library \href{http://pygments.org/}{Pygments} for syntax highlighting of all code (highly recommended)
+    \item Experienced bugs in the highlighting of regexes in Perl code
+    \item Found out why, in \href{https://bitbucket.org/birkenfeld/pygments-main/src/7304e4759ae65343d89a51359ca538912519cc31/pygments/lexers/agile.py?at=default}{source code} for \texttt{class PerlLexer}
+  \end{itemize}
 
-  \inputminted{ruby}{extra/conditional.rb}
-
-  Depending on the nature of corner cases and nesting, real parser might be preferable.
+  \begin{minted}{python}
+#TODO: give this to a perl guy who knows how to parse perl
+tokens = {
+ 'balanced-regex': [
+  (r'/(\\\\|\\[^\\]|[^\\/])*/[egimosx]*', String.Regex, '#pop'),
+  (r'!(\\\\|\\[^\\]|[^\\!])*![egimosx]*', String.Regex, '#pop'),
+  (r'\\(\\\\|[^\\])*\\[egimosx]*', String.Regex, '#pop'),
+  (r'{(\\\\|\\[^\\]|[^\\}])*}[egimosx]*', String.Regex, '#pop'),
+  (r'<(\\\\|\\[^\\]|[^\\>])*>[egimosx]*', String.Regex, '#pop'),
+  (r'\[(\\\\|\\[^\\]|[^\\\]])*\][egimosx]*', String.Regex, '#pop'),
+  (r'\((\\\\|\\[^\\]|[^\\\)])*\)[egimosx]*', String.Regex, '#pop'),
+  (r'@(\\\\|\\[^\\]|[^\\\@])*@[egimosx]*', String.Regex, '#pop'),
+  (r'%(\\\\|\\[^\\]|[^\\\%])*%[egimosx]*', String.Regex, '#pop'),
+  (r'\$(\\\\|\\[^\\]|[^\\\$])*\$[egimosx]*', String.Regex, '#pop'),
+  \end{minted}
 \end{frame}
-
-% TODO
-% Pygments example
-% Was true when highlighting as Perl
-% Distracting
-%  By the way: note the bug in \href{http://pygments.org/}{Pygments} syntax highlighter I use for my slides!
 
 \begin{frame}
   \frametitle{Conclusion}

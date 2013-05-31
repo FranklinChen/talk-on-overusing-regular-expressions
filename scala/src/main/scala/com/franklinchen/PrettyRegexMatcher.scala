@@ -3,26 +3,17 @@ package com.franklinchen
 object PrettyRegexMatcher extends RegexMatcher {
   override val name = "pretty regex matcher"
 
-  // These are just strings, not regexes.
   val user = """[a-zA-Z]+"""
+  val domainChar = """[^@\.]"""
+  val domainSegment = raw"""(?x) $domainChar+"""
   val at = """@"""
-  val domainSegment = """[^@\.]+"""
   val dot = """\."""
+  val domain = raw"""(?x)
+    ( $domainSegment $dot )+ $domainSegment"""
+  val email = raw"""(?x) \A $user $at $domain \z"""
 
-  // Create a giant string.
-  val email = raw"""(?x)
-    \A
-    $user
-    $at
-    (
-      $domainSegment $dot
-    )+
-    $domainSegment
-    \z"""
-
-  // Finally make a regex.
   val emailRegex = email.r
 
-  override def matches(s: String): Boolean =
+  def matches(s: String): Boolean =
     (emailRegex findFirstMatchIn s).nonEmpty
 }

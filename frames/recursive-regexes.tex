@@ -1,9 +1,7 @@
 \begin{frame}[fragile]
   \frametitle{Recursive regular expressions?}
 
-  Yes: modern Perl-style regexes can parse more than just the formal notion of regular expressions. They can also parse \emph{context-free grammars} that have nesting.
-
-  2007: \href{http://dev.perl.org/perl5/news/2007/perl-5.10.0.html}{Perl 5.10} introduced \href{http://www.catonmat.net/blog/recursive-regular-expressions/}{``recursive regular expressions''}
+  2007: \href{http://dev.perl.org/perl5/news/2007/perl-5.10.0.html}{Perl 5.10} introduced \href{http://www.catonmat.net/blog/recursive-regular-expressions/}{``recursive regular expressions''} that can parse \emph{context-free grammars} that have rules embedding a reference to themselves.
 
   \inputminted{perl}{extra/parens.pl}
 

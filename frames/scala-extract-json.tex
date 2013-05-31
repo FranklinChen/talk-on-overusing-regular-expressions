@@ -1,0 +1,22 @@
+\begin{frame}[fragile]
+  \frametitle{Using the parsed JSON}
+
+  A test using \href{http://etorreborre.github.io/specs2/}{Specs2} Scala testing framework:
+
+  \begin{minted}{scala}
+parsers.value must succeedOn("""{
+  "distance" : 5.6,
+  "address" : {
+    "street" : "0 Nowhere Road",
+    "neighbors" : ["X", "Y"],
+    "garage" : null
+  }
+}""").withResult({ result: ToyJSON =>
+  result.asInstanceOf[JObject].
+    map("address").asInstanceOf[JObject].
+    map("neighbors").asInstanceOf[JArray].
+    list(1).asInstanceOf[JString].
+    string
+} ^^ be_==("Y"))
+  \end{minted}
+\end{frame}
