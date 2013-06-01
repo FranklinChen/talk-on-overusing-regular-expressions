@@ -4,7 +4,7 @@ organization := "com.franklinchen"
 
 version := "1.0.0"
 
-scalaVersion := "2.10.2-RC1"
+scalaVersion := "2.10.2-RC2"
 
 libraryDependencies ++= Seq(
   "org.scalacheck" %% "scalacheck" % "1.10.1" % "test",
