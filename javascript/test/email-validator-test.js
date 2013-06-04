@@ -31,8 +31,7 @@ describe("validator", function() {
         it("does not parse email address with +", function() {
             expect(function () {
                 return validator.parse('FranklinChen+spam@cmu.edu');
-            }).to.throw(validator.EmailParseError,
-                        /Parse Error: expected '@' at character 12, got '\.\.\.\+spam@cmu.ed\.\.\./);
+            }).to.throw(/Parse Error: expected '@' at character 12, got '\.\.\.\+spam@cmu.ed\.\.\./);
         });
     });
 });
