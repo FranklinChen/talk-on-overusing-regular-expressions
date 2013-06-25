@@ -1,4 +1,4 @@
-# EmailValidator
+# email_validator
 
 Sample Python code illustrating how to use [Pyparsing](http://pyparsing.wikispaces.com/) to parse an email address, with an emphasis on decent error reporting.
 
