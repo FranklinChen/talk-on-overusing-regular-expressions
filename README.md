@@ -14,6 +14,7 @@ I will emphasize ease of use, since one reason for the overuse of regular expres
   - Scala
   - Ruby
   - JavaScript
+  - Python
   - Perl
 - PDFs of slides
   - presentation for viewing
