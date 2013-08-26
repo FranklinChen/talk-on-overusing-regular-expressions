@@ -20,3 +20,6 @@ I will emphasize ease of use, since one reason for the overuse of regular expres
   - presentation for viewing
   - handout for printing
 
+## A free email validation API!
+
+2013-07-26: I saw an announcement for a free [email validation API](http://blog.mailgun.com/post/free-email-validation-api-for-web-forms/). It uses a recursive descent parser.
