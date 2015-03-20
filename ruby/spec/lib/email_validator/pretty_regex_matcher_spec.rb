@@ -5,12 +5,12 @@ describe EmailValidator::PrettyRegexMatcher do
 
   context "email" do
     it "matches good email" do
-      expect(matcher.match('prez@whitehouse.gov')).to be_true
+      expect(matcher.match('prez@whitehouse.gov')).not_to be_nil
     end
 
     # Note that there is no useful error message to extract!
     it "fails to match bad email with incomplete domain" do
-      expect(matcher.match('prez@whitehouse.')).to be_false
+      expect(matcher.match('prez@whitehouse.')).to be_nil
     end
   end
 end
